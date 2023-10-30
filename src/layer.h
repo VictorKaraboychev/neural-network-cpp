@@ -13,8 +13,17 @@ public:
     // Initialize the neurons in the layer.
     void initialize();
 
+    // Initialize the neurons in the layer with custom weights and biases.
+    void initialize(const std::vector<double> bias, const std::vector<std::vector<double>> &weights);
+
+    // Export the weights and biases of the layer.
+    std::pair<std::vector<double>, std::vector<std::vector<double>>> exportWeightsBiases() const;
+
     // Get the number of neurons in the layer.
     unsigned int size() const;
+
+    // Get the values of the neurons in the layer.
+    std::vector<double> getValues() const;
 
     // Compute the deltas for the layer.
     std::vector<double> computeDeltas(const std::vector<double> &nextLayerDeltas);

@@ -1,5 +1,7 @@
 #include "network.h"
 
+#include <stdexcept> // For runtime_error
+
 Network::Network()
 {
     // Constructor, if necessary
@@ -21,6 +23,39 @@ void Network::initialize()
     {
         layer.initialize();
     }
+}
+
+void Network::initialize(const std::vector<std::vector<double>> &bias, const std::vector<std::vector<std::vector<double>>> &weights)
+{
+    if (bias.size() != layers.size() || weights.size() != layers.size())
+    {
+        throw std::runtime_error("Input size does not match layer size.");
+    }
+
+    for (size_t i = 0; i < layers.size(); ++i)
+    {
+        layers[i].initialize(bias[i], weights[i]);
+    }
+}
+
+std::pair<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>> Network::exportWeightsBiases() const
+{
+    std::vector<std::vector<double>> bias;
+    std::vector<std::vector<std::vector<double>>> weights;
+
+    for (const Layer &layer : layers)
+    {
+        std::pair<std::vector<double>, std::vector<std::vector<double>>> layer_weights_biases = layer.exportWeightsBiases();
+        bias.push_back(layer_weights_biases.first);
+        weights.push_back(layer_weights_biases.second);
+    }
+
+    return std::make_pair(bias, weights);
+}
+
+unsigned int Network::size() const
+{
+    return layers.size();
 }
 
 std::vector<double> Network::forward(const std::vector<double> &inputs)
@@ -55,7 +90,7 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
             // Backpropagate and update weights and biases
             for (int l = layers.size() - 1; l >= 0; --l)
             {
-                const std::vector<double> &prev_outputs = (l == 0) ? input : layers[l - 1].forward();
+                const std::vector<double> &prev_outputs = (l == 0) ? input : layers[l - 1].getValues();
                 layers[l].backward(prev_outputs, deltas, learning_rate);
                 // Calculate new deltas for the previous layer
                 deltas = layers[l].computeDeltas(deltas);

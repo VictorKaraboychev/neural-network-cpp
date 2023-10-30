@@ -1,6 +1,6 @@
 #include "activation.h"
 
-Activation sigmoid = {
+Activation ActivationFunctions::sigmoid = {
 	[](double x) -> double {
 		return 1.0 / (1.0 + exp(-x));
 	},
@@ -10,7 +10,7 @@ Activation sigmoid = {
 	}
 };
 
-Activation relu = {
+Activation ActivationFunctions::relu = {
 	[](double x) -> double {
 		return x > 0.0 ? x : 0.0;
 	},
@@ -19,7 +19,7 @@ Activation relu = {
 	}
 };
 
-Activation leaky_relu = {
+Activation ActivationFunctions::leaky_relu = {
 	[](double x) -> double {
 		return x > 0.0 ? x : 0.01 * x;
 	},
@@ -28,7 +28,7 @@ Activation leaky_relu = {
 	}
 };
 
-Activation tanh = {
+Activation ActivationFunctions::tanh = {
 	[](double x) -> double {
 		return std::tanh(x);
 	},

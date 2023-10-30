@@ -5,7 +5,7 @@
 
 Neuron::Neuron(unsigned int num_inputs) : num_inputs(num_inputs)
 {
-    this->initialize();
+    // Constructor, if necessary
 }
 
 Neuron::~Neuron()
@@ -15,7 +15,20 @@ Neuron::~Neuron()
 
 void Neuron::initialize()
 {
+    this->value = 0.0;
     this->randomInitialization();
+}
+
+void Neuron::initialize(double bias, const std::vector<double> &weights)
+{
+    if (weights.size() != this->num_inputs)
+    {
+        throw std::runtime_error("Input size does not match weight size.");
+    }
+
+    this->value = 0.0;
+    this->bias = bias;
+    this->weights = weights;
 }
 
 double Neuron::getValue() const
@@ -23,9 +36,19 @@ double Neuron::getValue() const
     return this->value;
 }
 
-double Neuron::getWeight(unsigned int index) const
+std::vector<double> Neuron::getWeights() const
 {
-    return this->weights[index];
+    return this->weights;
+}
+
+double Neuron::getBias() const
+{
+    return this->bias;
+}
+
+double Neuron::computeDelta(double target, Activation activation)
+{
+    return (target - this->value) * activation.derivative(this->value);
 }
 
 double Neuron::activate(const std::vector<double> &inputs, Activation activation)
@@ -47,22 +70,23 @@ double Neuron::activate(const std::vector<double> &inputs, Activation activation
     return this->value;
 }
 
-void Neuron::updateWeightsBias(double learning_rate, double delta, const std::vector<double> &inputs, Activation activation)
+void Neuron::updateWeightsBias(double learning_rate, double delta, const std::vector<double> &inputs)
 {
     if (inputs.size() != this->num_inputs)
     {
         throw std::runtime_error("Input size does not match weight size.");
     }
 
-    double gradient = delta * activation.derivative(this->value);
+    // Calculate the gradient
+    double gradient = learning_rate * delta;
 
     // Update the bias
-    this->bias += learning_rate * gradient;
+    this->bias += gradient;
 
     // Update weights
     for (int i = 0; i < num_inputs; i++)
     {
-        this->weights[i] += learning_rate * gradient * inputs[i];
+        this->weights[i] += gradient * inputs[i];
     }
 }
 
@@ -70,9 +94,10 @@ void Neuron::randomInitialization()
 {
     // Initialize weights and bias with random values
     std::srand(static_cast<unsigned>(std::time(nullptr)));
+
+    this->bias = static_cast<double>(rand()) / RAND_MAX;
     for (int i = 0; i < num_inputs; i++)
     {
         this->weights.push_back(static_cast<double>(rand()) / RAND_MAX);
     }
-    this->bias = static_cast<double>(rand()) / RAND_MAX;
 }
