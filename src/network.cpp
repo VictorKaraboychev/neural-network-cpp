@@ -1,5 +1,6 @@
 #include "network.h"
 
+#include <iostream>
 #include <stdexcept> // For runtime_error
 
 Network::Network()
@@ -14,7 +15,10 @@ Network::~Network()
 
 void Network::addLayer(int num_neurons, Activation activation)
 {
-    layers.emplace_back(num_neurons, layers.empty() ? 0 : layers.back().size(), activation);
+    unsigned int num_inputs = layers.size() == 0 ? num_neurons : layers.back().size();
+    printf("num_inputs: %d\n", num_inputs);
+    Layer layer(num_neurons, num_inputs, activation);
+    layers.push_back(layer);
 }
 
 void Network::initialize()
@@ -72,6 +76,8 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
 {
     for (int epoch = 0; epoch < epochs; ++epoch)
     {
+        double epoch_loss = 0.0; // Initialize epoch loss to 0
+
         for (size_t i = 0; i < input_data.size(); ++i)
         {
             const std::vector<double> &input = input_data[i];
@@ -82,10 +88,14 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
 
             // Compute loss (e.g., mean squared error) and deltas
             std::vector<double> deltas(output.size());
+            double instance_loss = 0.0; // Initialize instance loss to 0
             for (size_t j = 0; j < output.size(); ++j)
             {
                 deltas[j] = output[j] - target[j];
+                instance_loss += deltas[j] * deltas[j]; // Add squared error to instance loss
             }
+            instance_loss /= output.size(); // Divide by number of outputs to get mean squared error
+            epoch_loss += instance_loss;    // Add instance loss to epoch loss
 
             // Backpropagate and update weights and biases
             for (int l = layers.size() - 1; l >= 0; --l)
@@ -96,6 +106,9 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
                 deltas = layers[l].computeDeltas(deltas);
             }
         }
+
+        epoch_loss /= input_data.size();                                        // Divide by number of instances to get mean epoch loss
+        std::cout << "Epoch " << epoch << " loss: " << epoch_loss << std::endl; // Print epoch loss
     }
 }
 

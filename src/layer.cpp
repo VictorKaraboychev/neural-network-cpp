@@ -2,7 +2,7 @@
 
 #include <stdexcept> // For runtime_error
 
-Layer::Layer(unsigned int num_neurons, unsigned int num_inputs, Activation activation) : num_neurons(num_neurons), activation(activation)
+Layer::Layer(unsigned int num_neurons, unsigned int num_inputs, Activation activation) : num_inputs(num_inputs), num_neurons(num_neurons), activation(activation)
 {
     for (int i = 0; i < this->num_neurons; i++)
     {
@@ -66,18 +66,31 @@ std::vector<double> Layer::getValues() const
     return values;
 }
 
+void Layer::setValues(const std::vector<double> &values)
+{
+    if (values.size() != this->num_neurons)
+    {
+        throw std::runtime_error("Input size does not match layer size.");
+    }
+
+    for (int i = 0; i < this->num_neurons; i++)
+    {
+        this->neurons[i].setValue(values[i]);
+    }
+}
+
 std::vector<double> Layer::computeDeltas(const std::vector<double> &nextLayerDeltas)
 {
     std::vector<double> deltas(num_neurons, 0.0);
 
-    for (Neuron &neuron : this->neurons)
+    for (int i = 0; i < this->num_neurons; i++)
     {
         double weighted_sum = 0.0;
         for (int j = 0; j < nextLayerDeltas.size(); j++)
         {
-            weighted_sum += neuron.getWeights()[j] * nextLayerDeltas[j];
+            weighted_sum += neurons[i].getWeights()[j] * nextLayerDeltas[j];
         }
-        deltas.push_back(weighted_sum * this->activation.derivative(neuron.getValue()));
+        deltas[i] = weighted_sum * this->activation.derivative(neurons[i].getValue());
     }
 
     return deltas;
@@ -95,7 +108,7 @@ std::vector<double> Layer::forward(const std::vector<double> &inputs)
 
 void Layer::backward(const std::vector<double> &inputs, const std::vector<double> &deltas, double learning_rate)
 {
-    if (inputs.size() != this->num_neurons || deltas.size() != this->num_neurons)
+    if (inputs.size() != this->num_inputs || deltas.size() != this->num_neurons)
     {
         throw std::runtime_error("Input size does not match layer size.");
     }

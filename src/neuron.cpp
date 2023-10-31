@@ -36,6 +36,11 @@ double Neuron::getValue() const
     return this->value;
 }
 
+void Neuron::setValue(double value)
+{
+    this->value = value;
+}
+
 std::vector<double> Neuron::getWeights() const
 {
     return this->weights;

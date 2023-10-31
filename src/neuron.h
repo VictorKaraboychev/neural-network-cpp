@@ -20,6 +20,9 @@ public:
     // Get the neuron's output value.
     double getValue() const;
 
+    // Set the neuron's output value.
+    void setValue(double value);
+
     // Get the neuron's bias.
     double getBias() const;
 

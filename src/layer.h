@@ -27,6 +27,9 @@ public:
     // Get the values of the neurons in the layer.
     std::vector<double> getValues() const;
 
+    // Set the values of the neurons in the layer.
+    void setValues(const std::vector<double> &values);
+
     // Compute the deltas for the layer.
     std::vector<double> computeDeltas(const std::vector<double> &nextLayerDeltas);
 
