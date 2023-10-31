@@ -1,8 +1,10 @@
 #ifndef LAYER_H
 #define LAYER_H
 
-#include <vector>
 #include "neuron.h"
+#include "activation.h"
+
+#include <vector>
 
 class Layer
 {

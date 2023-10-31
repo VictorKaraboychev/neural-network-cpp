@@ -3,25 +3,40 @@
 
 #include "data.h"
 
-int main(int argc, char const *argv[])
+#include <iostream>
+
+int main()
 {
-	unsigned int** images = read_mnist_images("data/train-images-idx3-ubyte", 60000, 784);
-	unsigned int* labels = read_mnist_labels("data/train-labels-idx1-ubyte", 60000);
+	printf("Start\n");
 
-	Network network;
-	network.addLayer(784, ActivationFunctions::relu);
-	network.addLayer(16, ActivationFunctions::relu);
-	network.addLayer(16, ActivationFunctions::relu);
-	network.addLayer(10, ActivationFunctions::softmax);
+	unsigned int **images = read_mnist_images("../data/train/train-images.idx3-ubyte", 60, 784);
+	unsigned int *labels = read_mnist_labels("../data/train/train-labels.idx1-ubyte", 60);
 
-	network.initialize();
+	for (int i = 0; i < 60; i++)
+	{
+		std::cout << "Label: " << labels[i] << std::endl;
+	}
+
+	// Network network;
+
+	// network.addLayer(784, ActivationFunctions::relu);
+	// network.addLayer(16, ActivationFunctions::relu);
+	// network.addLayer(16, ActivationFunctions::relu);
+	// // network.addLayer(10, ActivationFunctions::softmax);
+
+	// printf("Network size: %d\n", network.size());
+
+	// network.initialize();
 
 	std::vector<std::vector<double>> input_data;
 	std::vector<std::vector<double>> target_data;
 
-	for(int i = 0; i < 60000; i++) {
+	for (int i = 0; i < 60; i++)
+	{
+		printf("Image %d\n", i);
 		std::vector<double> input;
-		for(int j = 0; j < 784; j++) {
+		for (int j = 0; j < 784; j++)
+		{
 			input.push_back(images[i][j] / 255.0);
 		}
 		input_data.push_back(input);
@@ -31,9 +46,12 @@ int main(int argc, char const *argv[])
 		target_data.push_back(target);
 	}
 
-	network.train(input_data, target_data, 0.01, 10);
+	// size of data
+	printf("Input data size: %d\n", input_data.size());
 
-	std::pair<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>> weights_biases = network.exportWeightsBiases();
+	// network.train(input_data, target_data, 0.01, 10);
+
+	// std::pair<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>> weights_biases = network.exportWeightsBiases();
 
 	return 0;
 }

@@ -2,6 +2,7 @@
 #define NEURON_H
 
 #include "activation.h"
+
 #include <vector>
 
 class Neuron
@@ -23,7 +24,7 @@ public:
     double getBias() const;
 
     // Gets the neurons weight for the index.
-    std::vector<double> Neuron::getWeights() const;
+    std::vector<double> getWeights() const;
 
     // Compute the delta for the neuron.
     double computeDelta(double target, Activation activation);

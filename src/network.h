@@ -2,6 +2,8 @@
 #define NETWORK_H
 
 #include "layer.h"
+#include "activation.h"
+
 #include <vector>
 
 class Network
