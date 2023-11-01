@@ -9,7 +9,7 @@
 class Network
 {
 public:
-    Network();
+    Network(unsigned int input_size);
     ~Network();
 
     // Add a layer to the network.
@@ -24,6 +24,9 @@ public:
     // Export the network's weights and biases.
     std::pair<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>> exportWeightsBiases() const;
 
+    // Import the network's weights and biases.
+    void importWeightsBiases(const std::vector<std::vector<double>> &bias, const std::vector<std::vector<std::vector<double>>> &weights);
+
     // Get the number of layers in the network.
     unsigned int size() const;
 
@@ -37,7 +40,8 @@ public:
     std::vector<double> predict(const std::vector<double> &input);
 
 private:
-    std::vector<Layer> layers; // Layers in the network.
+    unsigned int input_size;    // Number of inputs to the network.
+    std::vector<Layer> layers;  // Layers in the network.
 };
 
 #endif // NETWORK_H

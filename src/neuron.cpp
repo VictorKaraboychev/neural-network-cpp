@@ -1,6 +1,5 @@
 #include "neuron.h"
 
-#include <ctime>     // For random weight initialization
 #include <stdexcept> // For runtime_error
 
 Neuron::Neuron(unsigned int num_inputs) : num_inputs(num_inputs)
@@ -41,14 +40,29 @@ void Neuron::setValue(double value)
     this->value = value;
 }
 
+double Neuron::getBias() const
+{
+    return this->bias;
+}
+
+void Neuron::setBias(double bias)
+{
+    this->bias = bias;
+}
+
 std::vector<double> Neuron::getWeights() const
 {
     return this->weights;
 }
 
-double Neuron::getBias() const
+void Neuron::setWeights(const std::vector<double> &weights)
 {
-    return this->bias;
+    if (weights.size() != this->num_inputs)
+    {
+        throw std::runtime_error("Input size does not match weight size.");
+    }
+
+    this->weights = weights;
 }
 
 double Neuron::computeDelta(double target, Activation activation)
@@ -86,23 +100,22 @@ void Neuron::updateWeightsBias(double learning_rate, double delta, const std::ve
     double gradient = learning_rate * delta;
 
     // Update the bias
-    this->bias += gradient;
+    this->bias -= gradient;
 
     // Update weights
     for (int i = 0; i < num_inputs; i++)
     {
-        this->weights[i] += gradient * inputs[i];
+        this->weights[i] -= gradient * inputs[i];
     }
 }
 
 void Neuron::randomInitialization()
 {
     // Initialize weights and bias with random values
-    std::srand(static_cast<unsigned>(std::time(nullptr)));
+    this->bias = (double)rand() / RAND_MAX;
 
-    this->bias = static_cast<double>(rand()) / RAND_MAX;
     for (int i = 0; i < num_inputs; i++)
     {
-        this->weights.push_back(static_cast<double>(rand()) / RAND_MAX);
+        this->weights.push_back((double)rand() / RAND_MAX);
     }
 }

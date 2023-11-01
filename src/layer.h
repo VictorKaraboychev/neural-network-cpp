@@ -19,7 +19,10 @@ public:
     void initialize(const std::vector<double> bias, const std::vector<std::vector<double>> &weights);
 
     // Export the weights and biases of the layer.
-    std::pair<std::vector<double>, std::vector<std::vector<double>>> exportWeightsBiases() const;
+    std::pair<std::vector<double>, std::vector<std::vector<double>>> getWeightsBiases() const;
+
+    // Import the weights and biases of the layer.
+    void setWeightsBiases(const std::vector<double> bias, const std::vector<std::vector<double>> &weights);
 
     // Get the number of neurons in the layer.
     unsigned int size() const;

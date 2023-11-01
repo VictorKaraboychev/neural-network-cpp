@@ -3,7 +3,7 @@
 #include <iostream>
 #include <stdexcept> // For runtime_error
 
-Network::Network()
+Network::Network(unsigned int input_size) : input_size(input_size)
 {
     // Constructor, if necessary
 }
@@ -15,8 +15,7 @@ Network::~Network()
 
 void Network::addLayer(int num_neurons, Activation activation)
 {
-    unsigned int num_inputs = layers.size() == 0 ? num_neurons : layers.back().size();
-    printf("num_inputs: %d\n", num_inputs);
+    unsigned int num_inputs = layers.size() == 0 ? this->input_size : layers.back().size();
     Layer layer(num_neurons, num_inputs, activation);
     layers.push_back(layer);
 }
@@ -49,12 +48,25 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<
 
     for (const Layer &layer : layers)
     {
-        std::pair<std::vector<double>, std::vector<std::vector<double>>> layer_weights_biases = layer.exportWeightsBiases();
+        std::pair<std::vector<double>, std::vector<std::vector<double>>> layer_weights_biases = layer.getWeightsBiases();
         bias.push_back(layer_weights_biases.first);
         weights.push_back(layer_weights_biases.second);
     }
 
     return std::make_pair(bias, weights);
+}
+
+void Network::importWeightsBiases(const std::vector<std::vector<double>> &bias, const std::vector<std::vector<std::vector<double>>> &weights)
+{
+    if (bias.size() != this->layers.size() || weights.size() != this->layers.size())
+    {
+        throw std::runtime_error("Input size does not match layer size.");
+    }
+
+    for (size_t i = 0; i < this->layers.size(); ++i)
+    {
+        this->layers[i].setWeightsBiases(bias[i], weights[i]);
+    }
 }
 
 unsigned int Network::size() const
@@ -107,8 +119,8 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
             }
         }
 
-        epoch_loss /= input_data.size();                                        // Divide by number of instances to get mean epoch loss
-        std::cout << "Epoch " << epoch << " loss: " << epoch_loss << std::endl; // Print epoch loss
+        epoch_loss /= input_data.size();                                            // Divide by number of instances to get mean epoch loss
+        std::cout << "Epoch " << epoch + 1 << " loss: " << epoch_loss << std::endl; // Print epoch loss
     }
 }
 

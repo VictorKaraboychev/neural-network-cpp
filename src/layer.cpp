@@ -37,7 +37,7 @@ void Layer::initialize(const std::vector<double> bias, const std::vector<std::ve
     }
 }
 
-std::pair<std::vector<double>, std::vector<std::vector<double>>> Layer::exportWeightsBiases() const
+std::pair<std::vector<double>, std::vector<std::vector<double>>> Layer::getWeightsBiases() const
 {
     std::vector<double> bias;
     std::vector<std::vector<double>> weights;
@@ -49,6 +49,20 @@ std::pair<std::vector<double>, std::vector<std::vector<double>>> Layer::exportWe
     }
 
     return std::make_pair(bias, weights);
+}
+
+void Layer::setWeightsBiases(const std::vector<double> bias, const std::vector<std::vector<double>> &weights)
+{
+    if (bias.size() != this->num_neurons || weights.size() != this->num_neurons)
+    {
+        throw std::runtime_error("Input size does not match layer size.");
+    }
+
+    for (int i = 0; i < this->num_neurons; i++)
+    {
+        this->neurons[i].setBias(bias[i]);
+        this->neurons[i].setWeights(weights[i]);
+    }
 }
 
 unsigned int Layer::size() const
@@ -81,16 +95,16 @@ void Layer::setValues(const std::vector<double> &values)
 
 std::vector<double> Layer::computeDeltas(const std::vector<double> &nextLayerDeltas)
 {
-    std::vector<double> deltas(num_neurons, 0.0);
+    std::vector<double> deltas(num_inputs, 0.0);
 
     for (int i = 0; i < this->num_neurons; i++)
     {
-        double weighted_sum = 0.0;
-        for (int j = 0; j < nextLayerDeltas.size(); j++)
+        double alpha = this->activation.derivative(neurons[i].getValue()) * nextLayerDeltas[i];
+
+        for (int j = 0; j < this->num_inputs; j++)
         {
-            weighted_sum += neurons[i].getWeights()[j] * nextLayerDeltas[j];
+            deltas[j] += neurons[i].getWeights()[j] * alpha;
         }
-        deltas[i] = weighted_sum * this->activation.derivative(neurons[i].getValue());
     }
 
     return deltas;

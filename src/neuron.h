@@ -26,8 +26,14 @@ public:
     // Get the neuron's bias.
     double getBias() const;
 
+    // Set the neuron's bias.
+    void setBias(double bias);
+
     // Gets the neurons weight for the index.
     std::vector<double> getWeights() const;
+
+    // Set the neuron's weights.
+    void setWeights(const std::vector<double> &weights);
 
     // Compute the delta for the neuron.
     double computeDelta(double target, Activation activation);
