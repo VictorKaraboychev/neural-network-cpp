@@ -33,8 +33,8 @@ public:
     // Set the values of the neurons in the layer.
     void setValues(const std::vector<double> &values);
 
-    // Compute the deltas for the layer.
-    std::vector<double> computeDeltas(const std::vector<double> &nextLayerDeltas);
+    // Compute the deltas for the previous layer (l - 1) based on the current layer deltas (l).
+    std::vector<double> computeDeltas(const std::vector<double> &deltas);
 
     // Forward pass through the layer.
     std::vector<double> forward(const std::vector<double> &inputs);

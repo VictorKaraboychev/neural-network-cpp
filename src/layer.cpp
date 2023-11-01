@@ -93,21 +93,21 @@ void Layer::setValues(const std::vector<double> &values)
     }
 }
 
-std::vector<double> Layer::computeDeltas(const std::vector<double> &nextLayerDeltas)
+std::vector<double> Layer::computeDeltas(const std::vector<double> &deltas) // deltas for layer l
 {
-    std::vector<double> deltas(num_inputs, 0.0);
+    std::vector<double> prev_deltas(num_inputs, 0.0); // deltas for layer l - 1
 
     for (int i = 0; i < this->num_neurons; i++)
     {
-        double alpha = this->activation.derivative(neurons[i].getValue()) * nextLayerDeltas[i];
+        double alpha = this->activation.derivative(neurons[i].getValue()) * deltas[i];
 
         for (int j = 0; j < this->num_inputs; j++)
         {
-            deltas[j] += neurons[i].getWeights()[j] * alpha;
+            prev_deltas[j] += this->neurons[i].getWeights()[j] * alpha;
         }
     }
 
-    return deltas;
+    return prev_deltas;
 }
 
 std::vector<double> Layer::forward(const std::vector<double> &inputs)

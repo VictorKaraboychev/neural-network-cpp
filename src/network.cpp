@@ -112,10 +112,15 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
             // Backpropagate and update weights and biases
             for (int l = layers.size() - 1; l >= 0; --l)
             {
+                // Get previous outputs and deltas
                 const std::vector<double> &prev_outputs = (l == 0) ? input : layers[l - 1].getValues();
+                const std::vector<double> &prev_deltas = layers[l].computeDeltas(deltas);
+
+                // Update weights and biases
                 layers[l].backward(prev_outputs, deltas, learning_rate);
+
                 // Calculate new deltas for the previous layer
-                deltas = layers[l].computeDeltas(deltas);
+                deltas = prev_deltas; //layers[l].computeDeltas(deltas);
             }
         }
 
