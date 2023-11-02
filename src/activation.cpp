@@ -7,8 +7,7 @@ Activation ActivationFunctions::sigmoid = {
 	},
 	[](double x) -> double
 	{
-		double s = 1.0 / (1.0 + exp(-x));
-		return s * (1.0 - s);
+		return x * (1.0 - x);
 	}};
 
 Activation ActivationFunctions::relu = {

@@ -93,21 +93,53 @@ void Layer::setValues(const std::vector<double> &values)
     }
 }
 
-std::vector<double> Layer::computeDeltas(const std::vector<double> &deltas) // deltas for layer l
+double Layer::computeLoss(const std::vector<double> &targets) const
 {
-    std::vector<double> prev_deltas(num_inputs, 0.0); // deltas for layer l - 1
+    if (targets.size() != this->num_neurons)
+    {
+        throw std::runtime_error("Input size does not match layer size.");
+    }
+
+    double loss = 0.0;
+    for (int i = 0; i < this->num_neurons; i++)
+    {
+        loss += std::pow(this->neurons[i].getValue() - targets[i], 2);
+    }
+    return loss / this->num_neurons;
+}
+
+void Layer::computeDeltas(Layer &next_layer) // deltas for layer l + 1
+{
+    std::vector<double> deltas(this->num_neurons, 0.0); // deltas for layer l
 
     for (int i = 0; i < this->num_neurons; i++)
     {
-        double alpha = this->activation.derivative(neurons[i].getValue()) * deltas[i];
-
-        for (int j = 0; j < this->num_inputs; j++)
+        double delta = 0.0;
+        for (int j = 0; j < next_layer.size(); j++)
         {
-            prev_deltas[j] += this->neurons[i].getWeights()[j] * alpha;
+            delta += next_layer.deltas[j] * next_layer.neurons[j].getWeights()[i];
         }
+        deltas[i] = delta * this->activation.derivative(this->neurons[i].getValue());
     }
 
-    return prev_deltas;
+    this->deltas = deltas;
+}
+
+void Layer::computeDeltas(const std::vector<double> &targets)
+{
+    if (targets.size() != this->num_neurons)
+    {
+        throw std::runtime_error("Input size does not match layer size.");
+    }
+
+    std::vector<double> deltas(this->num_neurons, 0.0); // deltas for layer l
+
+     for (size_t i = 0; i < this->num_neurons; ++i)
+    {
+        deltas[i] = (this->neurons[i].getValue() - targets[i]) * this->activation.derivative(this->neurons[i].getValue());
+    }
+
+    this->deltas = deltas;
 }
 
 std::vector<double> Layer::forward(const std::vector<double> &inputs)
@@ -120,15 +152,15 @@ std::vector<double> Layer::forward(const std::vector<double> &inputs)
     return outputs;
 }
 
-void Layer::backward(const std::vector<double> &inputs, const std::vector<double> &deltas, double learning_rate)
+void Layer::backward(const std::vector<double> &inputs, double learning_rate)
 {
-    if (inputs.size() != this->num_inputs || deltas.size() != this->num_neurons)
+    if (inputs.size() != this->num_inputs)
     {
         throw std::runtime_error("Input size does not match layer size.");
     }
 
     for (int i = 0; i < this->num_neurons; i++)
     {
-        this->neurons[i].updateWeightsBias(learning_rate, deltas[i], inputs);
+        this->neurons[i].updateWeightsBias(learning_rate, this->deltas[i], inputs);
     }
 }

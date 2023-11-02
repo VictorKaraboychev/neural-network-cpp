@@ -65,11 +65,6 @@ void Neuron::setWeights(const std::vector<double> &weights)
     this->weights = weights;
 }
 
-double Neuron::computeDelta(double target, Activation activation)
-{
-    return (target - this->value) * activation.derivative(this->value);
-}
-
 double Neuron::activate(const std::vector<double> &inputs, Activation activation)
 {
     if (inputs.size() != this->num_inputs)
@@ -97,15 +92,15 @@ void Neuron::updateWeightsBias(double learning_rate, double delta, const std::ve
     }
 
     // Calculate the gradient
-    double gradient = learning_rate * -delta;
+    double gradient = learning_rate * delta;
 
     // Update the bias
-    this->bias += gradient;
+    this->bias -= gradient;
 
     // Update weights
     for (int i = 0; i < num_inputs; i++)
     {
-        this->weights[i] += gradient * inputs[i];
+        this->weights[i] -= gradient * inputs[i];
     }
 }
 

@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <stdexcept> // For runtime_error
+#include <chrono>    // For steady_clock
+#include <atomic>
 
 Network::Network(unsigned int input_size) : input_size(input_size)
 {
@@ -17,12 +19,12 @@ void Network::addLayer(int num_neurons, Activation activation)
 {
     unsigned int num_inputs = layers.size() == 0 ? this->input_size : layers.back().size();
     Layer layer(num_neurons, num_inputs, activation);
-    layers.push_back(layer);
+    this->layers.push_back(layer);
 }
 
 void Network::initialize()
 {
-    for (Layer &layer : layers)
+    for (Layer &layer : this->layers)
     {
         layer.initialize();
     }
@@ -30,14 +32,14 @@ void Network::initialize()
 
 void Network::initialize(const std::vector<std::vector<double>> &bias, const std::vector<std::vector<std::vector<double>>> &weights)
 {
-    if (bias.size() != layers.size() || weights.size() != layers.size())
+    if (bias.size() != this->layers.size() || weights.size() != this->layers.size())
     {
         throw std::runtime_error("Input size does not match layer size.");
     }
 
     for (size_t i = 0; i < layers.size(); ++i)
     {
-        layers[i].initialize(bias[i], weights[i]);
+        this->layers[i].initialize(bias[i], weights[i]);
     }
 }
 
@@ -46,7 +48,7 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<
     std::vector<std::vector<double>> bias;
     std::vector<std::vector<std::vector<double>>> weights;
 
-    for (const Layer &layer : layers)
+    for (const Layer &layer : this->layers)
     {
         std::pair<std::vector<double>, std::vector<std::vector<double>>> layer_weights_biases = layer.getWeightsBiases();
         bias.push_back(layer_weights_biases.first);
@@ -71,13 +73,13 @@ void Network::importWeightsBiases(const std::vector<std::vector<double>> &bias, 
 
 unsigned int Network::size() const
 {
-    return layers.size();
+    return this->layers.size();
 }
 
 std::vector<double> Network::forward(const std::vector<double> &inputs)
 {
     std::vector<double> current_inputs = inputs;
-    for (Layer &layer : layers)
+    for (Layer &layer : this->layers)
     {
         current_inputs = layer.forward(current_inputs);
     }
@@ -86,6 +88,30 @@ std::vector<double> Network::forward(const std::vector<double> &inputs)
 
 void Network::train(const std::vector<std::vector<double>> &input_data, const std::vector<std::vector<double>> &target_data, double learning_rate, int epochs)
 {
+    // Check if input and target data have the same size
+    if (input_data.size() != target_data.size())
+    {
+        throw std::runtime_error("Input and target data have different sizes.");
+    }
+
+    // Check if input data has the same size as the input layer
+    if (input_data[0].size() != this->input_size)
+    {
+        throw std::runtime_error("Input data size does not match input layer size.");
+    }
+
+    // Check if target data has the same size as the output layer
+    if (target_data[0].size() != this->layers.back().size())
+    {
+        throw std::runtime_error("Target data size does not match output layer size.");
+    }
+
+    // Start timer
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+    // Train the network for the specified number of epochs
+    printf("\nTraining network...\n\n");
+
     for (int epoch = 0; epoch < epochs; ++epoch)
     {
         double epoch_loss = 0.0; // Initialize epoch loss to 0
@@ -96,40 +122,83 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
             const std::vector<double> &target = target_data[i];
 
             // Forward pass
-            std::vector<double> output = forward(input);
+            std::vector<double> output = this->forward(input);
 
-            // Compute loss (e.g., mean squared error) and deltas
-            std::vector<double> deltas(output.size());
-            double instance_loss = 0.0; // Initialize instance loss to 0
-            for (size_t j = 0; j < output.size(); ++j)
-            {
-                deltas[j] = output[j] - target[j];
-                instance_loss += deltas[j] * deltas[j]; // Add squared error to instance loss
-            }
-            instance_loss /= output.size(); // Divide by number of outputs to get mean squared error
-            epoch_loss += instance_loss;    // Add instance loss to epoch loss
+            // Compute deltas
+            this->layers.back().computeDeltas(target);
+
+            // Compute loss
+            epoch_loss += this->layers.back().computeLoss(target);
 
             // Backpropagate and update weights and biases
-            for (int l = layers.size() - 1; l >= 0; --l)
+            for (int l = this->layers.size() - 1; l >= 0; --l)
             {
                 // Get previous outputs and deltas
-                const std::vector<double> &prev_outputs = (l == 0) ? input : layers[l - 1].getValues();
-                const std::vector<double> &prev_deltas = layers[l].computeDeltas(deltas);
+                const std::vector<double> &prev_outputs = (l == 0) ? input : this->layers[l - 1].getValues();
+
+                // Compute deltas for the current layer (l) based on the next layer (l + 1)
+                if (l != this->layers.size() - 1)
+                {
+                    this->layers[l].computeDeltas(this->layers[l + 1]);
+                }
 
                 // Update weights and biases
-                layers[l].backward(prev_outputs, deltas, learning_rate);
-
-                // Calculate new deltas for the previous layer
-                deltas = prev_deltas; //layers[l].computeDeltas(deltas);
+                this->layers[l].backward(prev_outputs, learning_rate);
             }
         }
 
-        epoch_loss /= input_data.size();                                            // Divide by number of instances to get mean epoch loss
-        std::cout << "Epoch " << epoch + 1 << " loss: " << epoch_loss << std::endl; // Print epoch loss
+        // Divide by number of instances to get mean epoch loss
+        epoch_loss /= input_data.size();
+
+        // Print epoch loss every 1% of epochs
+        if (epoch % (epochs / 100) == 0 || epoch == epochs - 1)
+        {
+            // Make a progress bar and display current epoch loss
+            printf("\r[");
+            int pos = 50 * epoch / epochs;
+            for (int i = 0; i <= 50; ++i)
+            {
+                if (i < pos)
+                {
+                    printf("=");
+                }
+                else if (i == pos)
+                {
+                    printf(">");
+                }
+                else
+                {
+                    printf(" ");
+                }
+            }
+            printf("] %d%% - Loss: %.2e", epoch * 100 / epochs, epoch_loss);
+
+            // Flush stdout
+            fflush(stdout);
+
+            // Print 100% and a full bar on the last epoch
+            if (epoch == epochs - 1)
+            {
+                printf("\r[");
+                for (int i = 0; i <= 50; ++i)
+                {
+                    printf("=");
+                }
+                printf("] 100%% - Loss: %.4e\n", epoch_loss);
+            }
+        }
     }
+
+    printf("\nTraining complete for %d epochs with a learning rate of %.2f.\n\n", epochs, learning_rate);
+
+    // Stop timer
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+
+    // Print training time
+    printf("Training time: %ld ms\n\n", std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
 }
 
 std::vector<double> Network::predict(const std::vector<double> &input)
 {
-    return forward(input);
+    return this->forward(input);
 }

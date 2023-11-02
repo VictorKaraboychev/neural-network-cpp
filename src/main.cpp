@@ -7,7 +7,7 @@
 #include <fstream>
 #include <stdint.h> // For uint8_t
 
-#define TRAINING_SIZE 60
+#define TRAINING_SIZE 100
 #define TESTING_SIZE 10
 
 // int main()
@@ -50,12 +50,12 @@
 // 	// size of data
 // 	printf("Input data size: %d\n\n", input_data.size());
 
-// 	printf("Training...\n");
+// 	// printf("Training...\n");
 
 // 	// Train network
-// 	network.train(input_data, target_data, 0.01, 10);
+// 	network.train(input_data, target_data, 1, 1000);
 
-// 	printf("Training complete\n\n");
+// 	// printf("Training complete\n\n");
 
 // 	// Import testing data
 // 	uint8_t **test_images = read_mnist_images("../data/test/test-images.idx3-ubyte", TESTING_SIZE, 784);
@@ -90,74 +90,7 @@
 // 	printf("Testing complete\n\n");
 
 // 	// Export weights and biases to file
-// 	std::pair<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>> weights_biases = network.exportWeightsBiases();
-
-// 	std::vector<std::vector<double>> bias = weights_biases.first;
-// 	std::vector<std::vector<std::vector<double>>> weights = weights_biases.second;
-
-// 	std::ofstream file("weights_biases.json");
-
-// 	file << "{\n";
-
-// 	file << "\t\"bias\": [\n";
-
-// 	for (int i = 0; i < bias.size(); i++)
-// 	{
-// 		file << "\t\t[";
-// 		for (int j = 0; j < bias[i].size(); j++)
-// 		{
-// 			file << bias[i][j];
-// 			if (j != bias[i].size() - 1)
-// 			{
-// 				file << ", ";
-// 			}
-// 		}
-// 		file << "]";
-// 		if (i != bias.size() - 1)
-// 		{
-// 			file << ",";
-// 		}
-// 		file << "\n";
-// 	}
-
-// 	file << "\t],\n";
-
-// 	file << "\t\"weights\": [\n";
-
-// 	for (int i = 0; i < weights.size(); i++)
-// 	{
-// 		file << "\t\t[\n";
-// 		for (int j = 0; j < weights[i].size(); j++)
-// 		{
-// 			file << "\t\t\t[";
-// 			for (int k = 0; k < weights[i][j].size(); k++)
-// 			{
-// 				file << weights[i][j][k];
-// 				if (k != weights[i][j].size() - 1)
-// 				{
-// 					file << ", ";
-// 				}
-// 			}
-// 			file << "]";
-// 			if (j != weights[i].size() - 1)
-// 			{
-// 				file << ",";
-// 			}
-// 			file << "\n";
-// 		}
-// 		file << "\t\t]";
-// 		if (i != weights.size() - 1)
-// 		{
-// 			file << ",";
-// 		}
-// 		file << "\n";
-// 	}
-
-// 	file << "\t]\n";
-
-// 	file << "}";
-
-// 	file.close();
+// 	export_network(network, "network.json");
 
 // 	return 0;
 // }
@@ -165,20 +98,20 @@
 int main()
 {
 	Network network(3);
-	network.addLayer(2, ActivationFunctions::sigmoid);
+	network.addLayer(10, ActivationFunctions::sigmoid);
 	network.addLayer(1, ActivationFunctions::sigmoid);
 
 	network.initialize();
 
-	std::vector<std::vector<std::vector<double>>> weights = {{{0.1, 0.2, 0.3}, {0.4, 0.5, 0.6}}, {{0.7, 0.8}}};
-	std::vector<std::vector<double>> bias = {{0.1, 0.2}, {0.3}};
+	// std::vector<std::vector<std::vector<double>>> weights = {{{0.1, 0.2, 0.3}, {0.4, 0.5, 0.6}}, {{0.7, 0.8}}};
+	// std::vector<std::vector<double>> bias = {{0.1, 0.2}, {0.3}};
 
-	network.importWeightsBiases(bias, weights);
+	// network.importWeightsBiases(bias, weights);
 
 	std::vector<std::vector<double>> input_data = {{0.1, 0.2, 0.3}, {0.4, 0.5, 0.6}, {0.7, 0.8, 0.9}};
-	std::vector<std::vector<double>> target_data = {{0.1}, {0.2}, {0.3}};
+	std::vector<std::vector<double>> target_data = {{1}, {0.2}, {0.3}};
 
-	network.train(input_data, target_data, 0.01, 1);
+	network.train(input_data, target_data, 1, 100000);
 
 	// test prediction
 
@@ -188,6 +121,9 @@ int main()
 
 		printf("Prediction: %f, Actual: %f\n", prediction[0], target_data[i][0]);
 	}
+
+	// export weights and biases
+	export_network(network, "test.json");
 
 	return 0;
 }

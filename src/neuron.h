@@ -17,10 +17,10 @@ public:
     // Initialize neuron weights and bias with custom values.
     void initialize(double bias, const std::vector<double> &weights);
 
-    // Get the neuron's output value.
+    // Get the neuron's weighted sum value.
     double getValue() const;
 
-    // Set the neuron's output value.
+    // Set the neuron's weighted sum value.
     void setValue(double value);
 
     // Get the neuron's bias.
@@ -34,9 +34,6 @@ public:
 
     // Set the neuron's weights.
     void setWeights(const std::vector<double> &weights);
-
-    // Compute the delta for the neuron.
-    double computeDelta(double target, Activation activation);
 
     // Compute the weighted sum of inputs and apply the activation function.
     double activate(const std::vector<double> &inputs, Activation activation);
