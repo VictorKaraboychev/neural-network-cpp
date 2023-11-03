@@ -12,6 +12,9 @@ uint8_t **read_mnist_images(std::string full_path, int number_of_images, int ima
 // Function to read MNIST image labels.
 uint8_t *read_mnist_labels(std::string full_path, int number_of_labels);
 
+// Print image to console.
+void print_image(std::vector<double> image, int width, int height);
+
 // Function to export a network to a json file.
 void export_network(Network network, std::string filename);
 

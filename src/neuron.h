@@ -42,9 +42,9 @@ public:
     void updateWeightsBias(double learning_rate, double delta, const std::vector<double> &inputs);
 
 private:
-    double value; // Output of the activation function.
+    unsigned int num_inputs; // Number of inputs to the neuron.
+    double value;            // Output of the activation function.
 
-    unsigned int num_inputs;     // Number of inputs to the neuron.
     std::vector<double> weights; // Weights for each input.
     double bias;                 // Bias for the neuron.
 

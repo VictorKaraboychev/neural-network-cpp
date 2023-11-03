@@ -83,6 +83,37 @@ uint8_t *read_mnist_labels(std::string full_path, int number_of_labels)
     }
 }
 
+void print_image(std::vector<double> image, int width, int height)
+{
+    std::string edges[8] = {"┌", "┐", "└", "┘", "─", "─", "│", "│"};
+    std::string shades[5] = {"  ", "░░", "▒▒", "▓▓", "██"};
+
+    std::cout << edges[0];
+    for (int j = 0; j < width; j++)
+    {
+        std::cout << edges[4] << edges[4];
+    }
+    std::cout << edges[1] << std::endl;
+
+    for (int i = 0; i < height; i++)
+    {
+        std::cout << edges[6];
+        for (int j = 0; j < width; j++)
+        {
+            double pixel = image[i * width + j];
+            std::cout << shades[(int)(pixel * 4)];
+        }
+        std::cout << edges[7] << std::endl;
+    }
+
+    std::cout << edges[2];
+    for (int j = 0; j < width; j++)
+    {
+        std::cout << edges[5] << edges[5];
+    }
+    std::cout << edges[3] << std::endl;
+}
+
 void export_network(Network network, std::string filename)
 {
     std::pair<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>> weights_biases = network.exportWeightsBiases();

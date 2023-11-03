@@ -108,23 +108,6 @@ double Layer::computeLoss(const std::vector<double> &targets) const
     return loss / this->num_neurons;
 }
 
-void Layer::computeDeltas(Layer &next_layer) // deltas for layer l + 1
-{
-    std::vector<double> deltas(this->num_neurons, 0.0); // deltas for layer l
-
-    for (int i = 0; i < this->num_neurons; i++)
-    {
-        double delta = 0.0;
-        for (int j = 0; j < next_layer.size(); j++)
-        {
-            delta += next_layer.deltas[j] * next_layer.neurons[j].getWeights()[i];
-        }
-        deltas[i] = delta * this->activation.derivative(this->neurons[i].getValue());
-    }
-
-    this->deltas = deltas;
-}
-
 void Layer::computeDeltas(const std::vector<double> &targets)
 {
     if (targets.size() != this->num_neurons)
@@ -137,6 +120,23 @@ void Layer::computeDeltas(const std::vector<double> &targets)
      for (size_t i = 0; i < this->num_neurons; ++i)
     {
         deltas[i] = (this->neurons[i].getValue() - targets[i]) * this->activation.derivative(this->neurons[i].getValue());
+    }
+
+    this->deltas = deltas;
+}
+
+void Layer::computeDeltas(Layer &next_layer) // deltas for layer l + 1
+{
+    std::vector<double> deltas(this->num_neurons, 0.0); // deltas for layer l
+
+    for (int i = 0; i < this->num_neurons; i++)
+    {
+        double delta = 0.0;
+        for (int j = 0; j < next_layer.size(); j++)
+        {
+            delta += next_layer.deltas[j] * next_layer.neurons[j].getWeights()[i];
+        }
+        deltas[i] = delta * this->activation.derivative(this->neurons[i].getValue());
     }
 
     this->deltas = deltas;

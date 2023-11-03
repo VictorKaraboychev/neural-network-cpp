@@ -30,9 +30,6 @@ public:
     // Get the number of layers in the network.
     unsigned int size() const;
 
-    // Forward pass through the network.
-    std::vector<double> forward(const std::vector<double> &inputs);
-
     // Backpropagate and update weights and biases using gradient descent.
     void train(const std::vector<std::vector<double>> &input_data, const std::vector<std::vector<double>> &target_data, double learning_rate, int epochs);
 
@@ -42,6 +39,15 @@ public:
 private:
     unsigned int input_size;    // Number of inputs to the network.
     std::vector<Layer> layers;  // Layers in the network.
+
+    // Compute deltas for the network.
+    void computeDeltas(const std::vector<double> &target);
+
+    // Forward pass through the network.
+    std::vector<double> forward(const std::vector<double> &inputs);
+
+    // Update weights and biases using gradient descent.
+    void backward(const std::vector<double> &inputs, double learning_rate);
 };
 
 #endif // NETWORK_H

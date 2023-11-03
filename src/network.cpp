@@ -76,6 +76,18 @@ unsigned int Network::size() const
     return this->layers.size();
 }
 
+void Network::computeDeltas(const std::vector<double> &target)
+{
+    // Compute deltas for the output layer
+    this->layers.back().computeDeltas(target);
+
+    // Compute deltas for the hidden layers
+    for (int l = this->layers.size() - 2; l >= 0; --l)
+    {
+        this->layers[l].computeDeltas(this->layers[l + 1]);
+    }
+}
+
 std::vector<double> Network::forward(const std::vector<double> &inputs)
 {
     std::vector<double> current_inputs = inputs;
@@ -84,6 +96,18 @@ std::vector<double> Network::forward(const std::vector<double> &inputs)
         current_inputs = layer.forward(current_inputs);
     }
     return current_inputs;
+}
+
+void Network::backward(const std::vector<double> &input, double learning_rate)
+{
+    for (int l = this->layers.size() - 1; l >= 0; --l)
+    {
+        // Get previous outputs and deltas
+        const std::vector<double> &prev_outputs = (l == 0) ? input : this->layers[l - 1].getValues();
+
+        // Update weights and biases
+        this->layers[l].backward(prev_outputs, learning_rate);
+    }
 }
 
 void Network::train(const std::vector<std::vector<double>> &input_data, const std::vector<std::vector<double>> &target_data, double learning_rate, int epochs)
@@ -125,26 +149,13 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
             std::vector<double> output = this->forward(input);
 
             // Compute deltas
-            this->layers.back().computeDeltas(target);
+            this->computeDeltas(target);
+
+            // Backpropagate and update weights and biases
+            this->backward(input, learning_rate);
 
             // Compute loss
             epoch_loss += this->layers.back().computeLoss(target);
-
-            // Backpropagate and update weights and biases
-            for (int l = this->layers.size() - 1; l >= 0; --l)
-            {
-                // Get previous outputs and deltas
-                const std::vector<double> &prev_outputs = (l == 0) ? input : this->layers[l - 1].getValues();
-
-                // Compute deltas for the current layer (l) based on the next layer (l + 1)
-                if (l != this->layers.size() - 1)
-                {
-                    this->layers[l].computeDeltas(this->layers[l + 1]);
-                }
-
-                // Update weights and biases
-                this->layers[l].backward(prev_outputs, learning_rate);
-            }
         }
 
         // Divide by number of instances to get mean epoch loss
@@ -153,7 +164,13 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
         // Print epoch loss every 1% of epochs
         if (epoch % (epochs / 100) == 0 || epoch == epochs - 1)
         {
-            // Make a progress bar and display current epoch loss
+            // Calculate time elapsed and predicted time to completion
+            std::chrono::steady_clock::time_point current_time = std::chrono::steady_clock::now();
+            double time_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - begin).count() / 1000.0;
+            double time_per_epoch = time_elapsed / (epoch + 1);
+            double time_remaining = time_per_epoch * (epochs - epoch - 1);
+
+            // Make a progress bar and display current epoch loss and predicted time to completion
             printf("\r[");
             int pos = 50 * epoch / epochs;
             for (int i = 0; i <= 50; ++i)
@@ -171,7 +188,7 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
                     printf(" ");
                 }
             }
-            printf("] %d%% - Loss: %.2e", epoch * 100 / epochs, epoch_loss);
+            printf("] %d%% - Loss: %.2e - Elapsed: %.2fs - Remaining: %.2fs", epoch * 100 / epochs, epoch_loss, time_elapsed, time_remaining);
 
             // Flush stdout
             fflush(stdout);
@@ -184,7 +201,7 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
                 {
                     printf("=");
                 }
-                printf("] 100%% - Loss: %.4e\n", epoch_loss);
+                printf("] 100%% - Loss: %.4e - Elapsed: %.2fs - Total: %.2fs\n", epoch_loss, time_elapsed, time_elapsed + time_remaining);
             }
         }
     }
