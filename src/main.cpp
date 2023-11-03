@@ -7,7 +7,7 @@
 #include <fstream>
 #include <stdint.h> // For uint8_t
 
-#define TRAINING_SIZE 100
+#define TRAINING_SIZE 60000
 #define TESTING_SIZE 10000
 
 int main()
@@ -49,19 +49,18 @@ int main()
 	// for (size_t i = 0; i < 10; i++)
 	// {
 	// 	print_image(input_data[i], 28, 28);
-	// 	printf("Label: %d\n", train_labels[i]);
-	// 	printf("\n\n");
+	// 	printf("Target: [");
+	// 	for (size_t j = 0; j < target_data[i].size(); j++) {
+	// 		printf("%.0f ", target_data[i][j]);
+	// 	}
+	// 	printf("]\n\n");
 	// }
 
 	// size of data
 	printf("Input data size: %d\n\n", input_data.size());
 
-	// printf("Training...\n");
-
 	// Train network
 	network.train(input_data, target_data, 1, 100);
-
-	// printf("Training complete\n\n");
 
 	// Import testing data
 	uint8_t **test_images = read_mnist_images("../data/test/test-images.idx3-ubyte", TESTING_SIZE, 784);
