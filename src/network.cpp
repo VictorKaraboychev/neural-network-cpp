@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <stdexcept> // For runtime_error
-#include <chrono>    // For steady_clock
+#include <chrono>	 // For steady_clock
 #include <atomic>
 
 Network::Network(unsigned int input_size) : input_size(input_size)
@@ -100,38 +100,41 @@ std::vector<double> Network::forward(const std::vector<double> &inputs)
 
 void Network::backward(const std::vector<double> &input, double learning_rate)
 {
-	for (int l = this->layers.size() - 1; l >= 0; --l)
+	// Update weights and biases for hidden layers
+	for (int l = this->layers.size() - 1; l > 0; --l)
 	{
-		// Get previous outputs and deltas
-		const std::vector<double> &layer_inputs = (l == 0) ? input : this->layers[l - 1].getValues();
-
-		// Update weights and biases
-		this->layers[l].backward(layer_inputs, learning_rate);
+		this->layers[l].backward(this->layers[l - 1].getValues(), learning_rate);
 	}
+
+	// Update weights and biases for input layer
+	this->layers.front().backward(input, learning_rate);
 }
 
-void Network::train(const std::vector<std::vector<double>> &input_data, const std::vector<std::vector<double>> &target_data, double learning_rate, int epochs)
+void Network::train(const std::vector<std::vector<double>> &input_train_data, const std::vector<std::vector<double>> &target_train_data, const std::vector<std::vector<double>> &input_test_data, const std::vector<std::vector<double>> &target_test_data, double learning_rate, int epochs, std::string filename)
 {
 	// Check if input and target data have the same size
-	if (input_data.size() != target_data.size())
+	if (input_train_data.size() != target_train_data.size())
 	{
 		throw std::runtime_error("Input and target data have different sizes.");
 	}
 
 	// Check if input data has the same size as the input layer
-	if (input_data[0].size() != this->input_size)
+	if (input_train_data[0].size() != this->input_size)
 	{
 		throw std::runtime_error("Input data size does not match input layer size.");
 	}
 
 	// Check if target data has the same size as the output layer
-	if (target_data[0].size() != this->layers.back().size())
+	if (target_train_data[0].size() != this->layers.back().size())
 	{
 		throw std::runtime_error("Target data size does not match output layer size.");
 	}
 
 	// Start timer
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+
+	// Create CSV string
+	std::string csv = "epoch,loss,accuracy\n";
 
 	// Train the network for the specified number of epochs
 	printf("\nTraining network...\n\n");
@@ -140,10 +143,10 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
 	{
 		double epoch_loss = 0.0; // Initialize epoch loss to 0
 
-		for (size_t i = 0; i < input_data.size(); ++i)
+		for (size_t i = 0; i < input_train_data.size(); ++i)
 		{
-			const std::vector<double> &input = input_data[i];
-			const std::vector<double> &target = target_data[i];
+			const std::vector<double> &input = input_train_data[i];
+			const std::vector<double> &target = target_train_data[i];
 
 			// Forward pass
 			std::vector<double> output = this->forward(input);
@@ -159,10 +162,15 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
 		}
 
 		// Divide by number of instances to get mean epoch loss
-		epoch_loss /= input_data.size();
+		epoch_loss /= input_train_data.size();
+
+		double epoch_accuracy = this->test(input_test_data, target_test_data);
+
+		// Add epoch loss to CSV string
+		csv += std::to_string(epoch) + "," + std::to_string(epoch_loss) + "," + std::to_string(epoch_accuracy) + "\n";
 
 		// Print epoch loss every 1% of epochs
-		if (epoch % (epochs / 100) == 0 || epoch == epochs - 1)
+		if (epoch % (std::max(epochs, 100) / 100) == 0 || epoch == epochs - 1)
 		{
 			// Calculate time elapsed and predicted time to completion
 			std::chrono::steady_clock::time_point current_time = std::chrono::steady_clock::now();
@@ -188,7 +196,7 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
 					printf(" ");
 				}
 			}
-			printf("] %d%% - Loss: %.2e - Elapsed: %.2fs - Remaining: %.2fs", epoch * 100 / epochs, epoch_loss, time_elapsed, time_remaining);
+			printf("] %d%% - Accuracy: %.2f%% - Elapsed: %.2fs - Remaining: %.2fs", epoch * 100 / epochs, epoch_accuracy * 100, time_elapsed, time_remaining);
 
 			// Flush stdout
 			fflush(stdout);
@@ -201,9 +209,20 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
 				{
 					printf("=");
 				}
-				printf("] 100%% - Loss: %.4e - Elapsed: %.2fs - Total: %.2fs\n", epoch_loss, time_elapsed, time_elapsed + time_remaining);
+				printf("] 100%% - Accuracy: %.2f%% - Elapsed: %.2fs - Total: %.2fs\n", epoch_accuracy * 100, time_elapsed, time_elapsed + time_remaining);
 			}
 		}
+	}
+
+	std::ofstream file(filename + "_lr_" + std::to_string(learning_rate) + "_time_" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(begin.time_since_epoch()).count()) + ".csv");
+	if (file.is_open())
+	{
+		file << csv;
+		file.close();
+	}
+	else
+	{
+		std::cout << "Unable to open file `" << filename << "`!" << std::endl;
 	}
 
 	printf("\nTraining complete for %d epochs with a learning rate of %.2f.\n\n", epochs, learning_rate);
@@ -213,6 +232,52 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
 
 	// Print training time
 	printf("Training time: %ld ms\n\n", std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
+}
+
+double Network::test(const std::vector<std::vector<double>> &input_data, const std::vector<std::vector<double>> &target_data)
+{
+	// Check if input and target data have the same size
+	if (input_data.size() != target_data.size())
+	{
+		throw std::runtime_error("Input and target data have different sizes.");
+	}
+
+	int correct = 0;
+
+	for (size_t i = 0; i < input_data.size(); i++)
+	{
+		const std::vector<double> &input = input_data[i];
+		const std::vector<double> &target = target_data[i];
+
+		std::vector<double> prediction = this->forward(input);
+
+		// Find max index
+		int max_index = 0;
+		for (size_t j = 0; j < 10; j++)
+		{
+			if (prediction[j] > prediction[max_index])
+			{
+				max_index = j;
+			}
+		}
+
+		// Check if prediction is correct
+		int max_target_index = 0;
+		for (size_t j = 0; j < 10; j++)
+		{
+			if (target[j] > target[max_target_index])
+			{
+				max_target_index = j;
+			}
+		}
+
+		if (max_index == max_target_index)
+		{
+			correct++;
+		}
+	}
+
+	return (double)correct / input_data.size();
 }
 
 std::vector<double> Network::predict(const std::vector<double> &input)

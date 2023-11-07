@@ -4,6 +4,8 @@
 #include "layer.h"
 #include "activation.h"
 
+#include <fstream>
+#include <string>
 #include <vector>
 
 class Network
@@ -31,7 +33,10 @@ public:
 	unsigned int size() const;
 
 	// Backpropagate and update weights and biases using gradient descent.
-	void train(const std::vector<std::vector<double>> &input_data, const std::vector<std::vector<double>> &target_data, double learning_rate, int epochs);
+	void train(const std::vector<std::vector<double>> &input_train_data, const std::vector<std::vector<double>> &target_train_data, const std::vector<std::vector<double>> &input_test_data, const std::vector<std::vector<double>> &target_test_data, double learning_rate, int epochs, std::string filename);
+
+	// Compute the loss for the network.
+	double test(const std::vector<std::vector<double>> &input_data, const std::vector<std::vector<double>> &target_data);
 
 	// Make predictions using the trained network.
 	std::vector<double> predict(const std::vector<double> &input);
