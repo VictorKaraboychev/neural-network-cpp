@@ -240,9 +240,9 @@ std::vector<std::vector<double>> Network::eigenToVector(const Eigen::MatrixXd &e
 {
 	std::vector<std::vector<double>> stdVector(eigenVector.rows(), std::vector<double>(eigenVector.cols()));
 
-	for (int i = 0; i < eigenVector.rows(); ++i)
+	for (int64_t i = 0; i < eigenVector.rows(); ++i)
 	{
-		for (int j = 0; j < eigenVector.cols(); ++j)
+		for (int64_t j = 0; j < eigenVector.cols(); ++j)
 		{
 			stdVector[i][j] = eigenVector(i, j);
 		}
@@ -262,9 +262,9 @@ Eigen::MatrixXd Network::vectorToEigen(const std::vector<std::vector<double>> &s
 {
 	Eigen::MatrixXd eigenVector(stdVector.size(), stdVector[0].size());
 
-	for (int i = 0; i < stdVector.size(); ++i)
+	for (uint64_t i = 0; i < stdVector.size(); ++i)
 	{
-		for (int j = 0; j < stdVector[0].size(); ++j)
+		for (uint64_t j = 0; j < stdVector[0].size(); ++j)
 		{
 			eigenVector(i, j) = stdVector[i][j];
 		}

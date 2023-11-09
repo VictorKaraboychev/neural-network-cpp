@@ -126,13 +126,13 @@ void export_network(Network network, std::string filename)
 	json += "\"weights\": [\n";
 
 	// Add the weights to the JSON object
-	for (int i = 0; i < weights.size(); i++)
+	for (uint32_t i = 0; i < weights.size(); i++)
 	{
 		json += "[\n";
-		for (int j = 0; j < weights[i].size(); j++)
+		for (uint32_t j = 0; j < weights[i].size(); j++)
 		{
 			json += "[";
-			for (int k = 0; k < weights[i][j].size(); k++)
+			for (uint32_t k = 0; k < weights[i][j].size(); k++)
 			{
 				json += std::to_string(weights[i][j][k]);
 				if (k != weights[i][j].size() - 1)
@@ -159,10 +159,10 @@ void export_network(Network network, std::string filename)
 	json += "\"biases\": [\n";
 
 	// Add the biases to the JSON object
-	for (int i = 0; i < bias.size(); i++)
+	for (uint32_t i = 0; i < bias.size(); i++)
 	{
 		json += "[";
-		for (int j = 0; j < bias[i].size(); j++)
+		for (uint32_t j = 0; j < bias[i].size(); j++)
 		{
 			json += std::to_string(bias[i][j]);
 			if (j != bias[i].size() - 1)

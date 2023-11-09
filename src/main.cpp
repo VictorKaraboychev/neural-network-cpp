@@ -7,13 +7,13 @@
 #include <fstream>
 #include <stdint.h> // For uint8_t
 
-#define TRAINING_SIZE 60000
+#define TRAINING_SIZE 1000
 #define TESTING_SIZE 10000
 
 #define LEARNING_RATE 1
 #define EPOCHS 50
 
-uint32_t shape[] = {784, 10};
+uint32_t shape[] = {784, 10, 10};
 
 int main()
 {
@@ -30,8 +30,8 @@ int main()
 	network.initialize();
 
 	// Import training data
-	uint8_t **train_images = read_mnist_images("../data/train/train-images.idx3-ubyte", TRAINING_SIZE, 784);
-	uint8_t *train_labels = read_mnist_labels("../data/train/train-labels.idx1-ubyte", TRAINING_SIZE);
+	uint8_t **train_images = read_mnist_images("./data/train/train-images.idx3-ubyte", TRAINING_SIZE, 784);
+	uint8_t *train_labels = read_mnist_labels("./data/train/train-labels.idx1-ubyte", TRAINING_SIZE);
 
 	std::vector<std::vector<double>> input_data;
 	std::vector<std::vector<double>> target_data;
@@ -55,8 +55,8 @@ int main()
 	network.train(input_data, target_data, LEARNING_RATE, EPOCHS);
 
 	// Import testing data
-	uint8_t **test_images = read_mnist_images("../data/test/test-images.idx3-ubyte", TESTING_SIZE, 784);
-	uint8_t *test_labels = read_mnist_labels("../data/test/test-labels.idx1-ubyte", TESTING_SIZE);
+	uint8_t **test_images = read_mnist_images("./data/test/test-images.idx3-ubyte", TESTING_SIZE, 784);
+	uint8_t *test_labels = read_mnist_labels("./data/test/test-labels.idx1-ubyte", TESTING_SIZE);
 
 	printf("Testing...\n\n");
 

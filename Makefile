@@ -1,26 +1,26 @@
 CC = g++
 CXXFLAGS = -Wall -std=c++17
-SRC_DIR = ./src
-LIB_DIR = ./lib
+SRC_DIR = src
+LIB_DIR = lib
+INCLUDE_DIRS = $(foreach dir,$(wildcard $(LIB_DIR)/*),-I$(dir))
+
 SRCS = $(wildcard $(SRC_DIR)/**/*.cpp $(SRC_DIR)/*.cpp)
 OBJS = $(patsubst %.cpp,%.o,$(SRCS))
-TARGET = main.exe
 LIBS = $(wildcard $(LIB_DIR)/**/*.cpp $(LIB_DIR)/*.cpp)
 LIBOBJS = $(patsubst %.cpp,%.o,$(LIBS))
 LIB_TARGET = my_library
+TARGET = main.exe
 
-all: $(TARGET) $(LIB_TARGET)
+all: $(TARGET) clean
 
-$(TARGET): $(OBJS)
+$(TARGET): $(OBJS) $(LIBOBJS)
 	$(CC) $(CXXFLAGS) -o $@ $^
 
-$(LIB_TARGET): $(LIBOBJS)
-	$(CC) $(CXXFLAGS) -shared -o $@.so $^
-
 %.o: %.cpp
-	$(CC) $(CXXFLAGS) -c -o $@ $<
+	$(CC) $(CXXFLAGS) $(INCLUDE_DIRS) -c -o $@ $<
 
 clean:
-	find $(SRC_DIR) -name "*.o" -type f -delete
-	find $(LIB_DIR) -name "*.o" -type f -delete
-	rm -f $(TARGET) $(LIB_TARGET).so
+	del /Q .\$(SRC_DIR)\*.o
+	del /Q /S .\$(LIB_DIR)\*.o
+
+.PHONY: clean
