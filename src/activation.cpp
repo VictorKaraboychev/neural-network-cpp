@@ -1,41 +1,45 @@
 #include "activation.h"
 
 Activation ActivationFunctions::sigmoid = {
-	[](double x) -> double
+	[](const Eigen::VectorXd &x) -> Eigen::VectorXd
 	{
-		return 1.0 / (1.0 + exp(-x));
+		return 1.0 / (1.0 + (-x.array()).exp());
 	},
-	[](double x) -> double
+	[](const Eigen::VectorXd &x) -> Eigen::VectorXd
 	{
-		return x * (1.0 - x);
-	}};
+		return x.array() * (1.0 - x.array());
+	}
+};
 
-Activation ActivationFunctions::relu = {
-	[](double x) -> double
-	{
-		return x > 0.0 ? x : 0.0;
-	},
-	[](double x) -> double
-	{
-		return x > 0.0 ? 1.0 : 0.0;
-	}};
+// Activation ActivationFunctions::relu = {
+// 	[](const Eigen::VectorXd &x) -> Eigen::VectorXd
+// 	{
+// 		return x.array().max(0.0);
+// 	},
+// 	[](const Eigen::VectorXd &x) -> Eigen::VectorXd
+// 	{
+//         return x.array().max(0.0).array();
+// 	}
+// };
 
-Activation ActivationFunctions::leaky_relu = {
-	[](double x) -> double
-	{
-		return x > 0.0 ? x : 0.01 * x;
-	},
-	[](double x) -> double
-	{
-		return x > 0.0 ? 1.0 : -0.01;
-	}};
+// Activation ActivationFunctions::leaky_relu = {
+// 	[](const Eigen::VectorXd &x) -> Eigen::VectorXd
+// 	{
+// 		return x.array().max(0.0) + 0.01 * x.array().min(0.0);
+// 	},
+// 	[](const Eigen::VectorXd &x) -> Eigen::VectorXd
+// 	{
+//         return (x.array() > 0.0).select(x.array(), 0.01 * x.array());
+// 	}
+// };
 
 Activation ActivationFunctions::tanh = {
-	[](double x) -> double
+	[](const Eigen::VectorXd &x) -> Eigen::VectorXd
 	{
-		return std::tanh(x);
+		return x.array().tanh();
 	},
-	[](double x) -> double
+	[](const Eigen::VectorXd &x) -> Eigen::VectorXd
 	{
-		return 1.0 - x * x;
-	}};
+		return 1.0 - x.array().square();
+	}
+};

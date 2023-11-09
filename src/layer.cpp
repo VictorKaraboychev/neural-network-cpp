@@ -1,176 +1,120 @@
 #include "layer.h"
-
 #include <stdexcept> // For runtime_error
 
-Layer::Layer(unsigned int num_neurons, unsigned int num_inputs, Activation activation) : num_inputs(num_inputs), num_neurons(num_neurons), activation(activation)
+Layer::Layer(unsigned int num_neurons, unsigned int num_inputs, Activation activation): activation(activation)
 {
-	neurons.reserve(num_neurons);
-	for (int i = 0; i < this->num_neurons; i++)
-	{
-		Neuron neuron(this->num_inputs);
-		this->neurons.emplace_back(neuron);
-	}
+    this->weights.resize(num_neurons, num_inputs);
+    this->bias.resize(num_neurons);
+    this->values.resize(num_neurons);
+    this->deltas.resize(num_neurons);
 }
 
 Layer::~Layer()
 {
-	// Destructor, if necessary
+    // Destructor, if necessary
 }
 
 Layer* Layer::initialize()
 {
-	for (Neuron &neuron : this->neurons)
-	{
-		neuron.initialize();
-	}
-	return this;
+    // Initialize weights and biases randomly or with a specific strategy
+    this->weights = Eigen::MatrixXd::Random(weights.rows(), weights.cols());
+    this->bias = Eigen::VectorXd::Random(bias.size());
+
+    return this;
 }
 
-Layer* Layer::initialize(const std::vector<double>& bias, const std::vector<std::vector<double>>& weights)
+Layer* Layer::initialize(const Eigen::VectorXd &init_bias, const Eigen::MatrixXd &init_weights)
 {
-	if (bias.size() != this->num_neurons || weights.size() != this->num_neurons)
-	{
-		throw std::runtime_error("Input size does not match layer size.");
-	}
+    if (init_bias.size() != this->bias.size() || init_weights.rows() != this->weights.rows() || init_weights.cols() != this->weights.cols())
+    {
+        throw std::runtime_error("Input size does not match layer size.");
+    }
 
-	for (int i = 0; i < this->num_neurons; i++)
-	{
-		this->neurons[i].initialize(bias[i], weights[i]);
-	}
-	return this;
+    bias = init_bias;
+    weights = init_weights;
+
+    return this;
 }
 
-std::pair<std::vector<double>, std::vector<std::vector<double>>> Layer::getWeightsBiases() const
+std::pair<Eigen::VectorXd, Eigen::MatrixXd> Layer::getWeightsBiases() const
 {
-	std::vector<double> bias;
-	std::vector<std::vector<double>> weights;
-
-	bias.reserve(neurons.size());
-    weights.reserve(neurons.size());
-
-	for (const Neuron &neuron : this->neurons)
-	{
-		bias.emplace_back(neuron.getBias());
-		weights.emplace_back(neuron.getWeights());
-	}
-
-	return std::make_pair(bias, weights);
+    return std::make_pair(bias, weights);
 }
 
-void Layer::setWeightsBiases(const std::vector<double>& bias, const std::vector<std::vector<double>>& weights)
+void Layer::setWeightsBiases(const Eigen::VectorXd &new_bias, const Eigen::MatrixXd &new_weights)
 {
-	if (bias.size() != this->num_neurons || weights.size() != this->num_neurons)
-	{
-		throw std::runtime_error("Input size does not match layer size.");
-	}
+    if (new_bias.size() != this->bias.size() || new_weights.rows() != this->weights.rows() || new_weights.cols() != this->weights.cols())
+    {
+        throw std::runtime_error("Input size does not match layer size.");
+    }
 
-	for (int i = 0; i < this->num_neurons; i++)
-	{
-		this->neurons[i].setBias(bias[i]);
-		this->neurons[i].setWeights(weights[i]);
-	}
+    bias = new_bias;
+    weights = new_weights;
 }
 
 unsigned int Layer::size() const
 {
-	return this->num_neurons;
+    return this->values.size();
 }
 
-std::vector<double> Layer::getValues() const
+Eigen::VectorXd Layer::getValues() const
 {
-	std::vector<double> values;
-	values.reserve(this->num_neurons);
-	for (Neuron neuron : this->neurons)
-	{
-		values.emplace_back(neuron.getValue());
-	}
-	return values;
+    return values;
 }
 
-void Layer::setValues(const std::vector<double> &values)
+void Layer::setValues(const Eigen::VectorXd &new_values)
 {
-	if (values.size() != this->num_neurons)
-	{
-		throw std::runtime_error("Input size does not match layer size.");
-	}
+    if (new_values.size() != this->values.size())
+    {
+        throw std::runtime_error("Input size does not match layer size.");
+    }
 
-	for (int i = 0; i < this->num_neurons; i++)
-	{
-		this->neurons[i].setValue(values[i]);
-	}
+    this->values = new_values;
 }
 
-double Layer::computeLoss(const std::vector<double> &targets) const
+double Layer::computeLoss(const Eigen::VectorXd &targets) const
 {
-	if (targets.size() != this->num_neurons)
-	{
-		throw std::runtime_error("Input size does not match layer size.");
-	}
+    if (targets.size() != this->size())
+    {
+        throw std::runtime_error("Input size does not match layer size.");
+    }
 
-	double loss = 0.0;
-	for (int i = 0; i < this->num_neurons; i++)
-	{
-		loss += std::pow(this->neurons[i].getValue() - targets[i], 2);
-	}
-	return loss / this->num_neurons;
+    double loss = (values - targets).array().pow(2).sum();
+    return loss / this->size();
 }
 
-void Layer::computeDeltas(const std::vector<double> &targets)
+void Layer::computeDeltas(const Eigen::VectorXd &targets)
 {
-	if (targets.size() != this->num_neurons)
-	{
-		throw std::runtime_error("Input size does not match layer size.");
-	}
+    if (targets.size() != this->size())
+    {
+        throw std::runtime_error("Input size does not match layer size.");
+    }
 
-	std::vector<double> deltas(this->num_neurons, 0.0); // deltas for layer l
-
-	for (size_t i = 0; i < this->num_neurons; ++i)
-	{
-		double a = this->neurons[i].getValue();
-		deltas[i] = (a - targets[i]) * this->activation.derivative(a);
-	}
-
-	this->deltas = deltas;
+    deltas = (values - targets).array() * activation.derivative(values).array();
 }
 
-void Layer::computeDeltas(Layer &next_layer) // deltas for layer l + 1
+void Layer::computeDeltas(Layer &next_layer)
 {
-	std::vector<double> deltas(this->num_neurons, 0.0); // deltas for layer l
-
-	for (int i = 0; i < this->num_neurons; i++)
-	{
-		double delta = 0.0;
-		for (int j = 0; j < next_layer.size(); j++)
-		{
-			delta += next_layer.deltas[j] * next_layer.neurons[j].getWeights()[i];
-		}
-		deltas[i] = delta * this->activation.derivative(this->neurons[i].getValue());
-	}
-
-	this->deltas = deltas;
+    Eigen::VectorXd next_layer_weights = next_layer.weights.transpose() * next_layer.deltas;
+    this->deltas = next_layer_weights.array() * activation.derivative(values).array();
 }
 
-std::vector<double> Layer::forward(const std::vector<double> &inputs)
+Eigen::VectorXd Layer::forward(const Eigen::VectorXd &inputs)
 {
-	std::vector<double> outputs;
-	outputs.reserve(this->num_neurons);
-	for (Neuron &neuron : this->neurons)
-	{
-		outputs.emplace_back(neuron.activate(inputs, this->activation));
-	}
-	return outputs;
+    this->values = activation.function(this->weights * inputs + this->bias);
+    return this->values;
 }
 
-std::vector<double> Layer::backward(const std::vector<double> &inputs, double learning_rate)
+Eigen::VectorXd Layer::backward(const Eigen::VectorXd &inputs, double learning_rate)
 {
-	if (inputs.size() != this->num_inputs)
-	{
-		throw std::runtime_error("Input size does not match layer size.");
-	}
+    if (inputs.size() != this->weights.cols())
+    {
+        throw std::runtime_error("Input size does not match layer size.");
+    }
 
-	for (int i = 0; i < this->num_neurons; i++)
-	{
-		this->neurons[i].updateWeightsBias(learning_rate, this->deltas[i], inputs);
-	}
-	return this->getValues();
+    Eigen::MatrixXd weight_updates = this->deltas * inputs.transpose();
+    this->weights -= learning_rate * weight_updates;
+    this->bias -= learning_rate * this->deltas;
+
+    return this->values;
 }

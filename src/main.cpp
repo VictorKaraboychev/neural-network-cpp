@@ -13,7 +13,7 @@
 #define LEARNING_RATE 1
 #define EPOCHS 50
 
-uint32_t shape[] = {784, 16, 10};
+uint32_t shape[] = {784, 10};
 
 int main()
 {

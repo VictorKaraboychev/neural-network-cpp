@@ -2,8 +2,7 @@
 
 #include <iostream>
 #include <stdexcept> // For runtime_error
-#include <chrono>    // For steady_clock
-#include <atomic>
+#include <chrono>	 // For steady_clock
 
 Network::Network(unsigned int input_size) : input_size(input_size)
 {
@@ -15,7 +14,7 @@ Network::~Network()
 	// Destructor, if necessary
 }
 
-Network* Network::addLayer(int num_neurons, Activation activation)
+Network *Network::addLayer(int num_neurons, Activation activation)
 {
 	unsigned int num_inputs = layers.size() == 0 ? this->input_size : layers.back().size();
 	Layer layer(num_neurons, num_inputs, activation);
@@ -24,7 +23,7 @@ Network* Network::addLayer(int num_neurons, Activation activation)
 	return this;
 }
 
-Network* Network::initialize()
+Network *Network::initialize()
 {
 	for (Layer &layer : this->layers)
 	{
@@ -34,7 +33,7 @@ Network* Network::initialize()
 	return this;
 }
 
-Network* Network::initialize(const std::vector<std::vector<double>> &bias, const std::vector<std::vector<std::vector<double>>> &weights)
+Network *Network::initialize(const std::vector<std::vector<double>> &bias, const std::vector<std::vector<std::vector<double>>> &weights)
 {
 	if (bias.size() != this->layers.size() || weights.size() != this->layers.size())
 	{
@@ -43,7 +42,7 @@ Network* Network::initialize(const std::vector<std::vector<double>> &bias, const
 
 	for (size_t i = 0; i < layers.size(); ++i)
 	{
-		this->layers[i].initialize(bias[i], weights[i]);
+		this->layers[i].initialize(vectorToEigen(bias[i]), vectorToEigen(weights[i]));
 	}
 
 	return this;
@@ -59,9 +58,9 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<
 
 	for (const Layer &layer : this->layers)
 	{
-		std::pair<std::vector<double>, std::vector<std::vector<double>>> layer_weights_biases = layer.getWeightsBiases();
-		bias.emplace_back(layer_weights_biases.first);
-		weights.emplace_back(layer_weights_biases.second);
+		std::pair<Eigen::VectorXd, Eigen::MatrixXd> layer_weights_biases = layer.getWeightsBiases();
+		bias.emplace_back(eigenToVector(layer_weights_biases.first));
+		weights.emplace_back(eigenToVector(layer_weights_biases.second));
 	}
 
 	return std::make_pair(bias, weights);
@@ -76,7 +75,7 @@ void Network::importWeightsBiases(const std::vector<std::vector<double>> &bias, 
 
 	for (size_t i = 0; i < this->layers.size(); ++i)
 	{
-		this->layers[i].setWeightsBiases(bias[i], weights[i]);
+		this->layers[i].setWeightsBiases(vectorToEigen(bias[i]), vectorToEigen(weights[i]));
 	}
 }
 
@@ -85,7 +84,7 @@ unsigned int Network::size() const
 	return this->layers.size();
 }
 
-void Network::computeDeltas(const std::vector<double> &target)
+void Network::computeDeltas(const Eigen::VectorXd &target)
 {
 	// Compute deltas for the output layer
 	this->layers.back().computeDeltas(target);
@@ -97,20 +96,23 @@ void Network::computeDeltas(const std::vector<double> &target)
 	}
 }
 
-std::vector<double> Network::forward(const std::vector<double> &inputs)
+Eigen::VectorXd Network::forward(const Eigen::VectorXd &inputs)
 {
-	std::vector<double> current_inputs = inputs;
-	for (Layer &layer : this->layers)
+	Eigen::VectorXd current_inputs = inputs;
+
+	for (Layer &layer : layers)
 	{
 		current_inputs = layer.forward(current_inputs);
 	}
+
 	return current_inputs;
 }
 
-void Network::backward(const std::vector<double> &input, double learning_rate)
+void Network::backward(const Eigen::VectorXd &input, double learning_rate)
 {
-	std::vector<double> current_inputs = input;
-	for (Layer &layer : this->layers)
+	Eigen::VectorXd current_inputs = input;
+
+	for (Layer &layer : layers)
 	{
 		current_inputs = layer.backward(current_inputs, learning_rate);
 	}
@@ -149,11 +151,11 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
 		// Train the network on each instance
 		for (size_t i = 0; i < input_data.size(); ++i)
 		{
-			const std::vector<double> &input = input_data[i];
-			const std::vector<double> &target = target_data[i];
+			const Eigen::VectorXd &input = vectorToEigen(input_data[i]);
+			const Eigen::VectorXd &target = vectorToEigen(target_data[i]);
 
 			// Forward pass
-			std::vector<double> output = this->forward(input);
+			Eigen::VectorXd output = this->forward(input);
 
 			// Compute deltas
 			this->computeDeltas(target);
@@ -222,7 +224,51 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
 	printf("Training time: %.3fs\n\n", std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / 1000.0);
 }
 
-std::vector<double> Network::predict(std::vector<double> &input)
+std::vector<double> Network::predict(const std::vector<double> &input)
 {
-	return this->forward(input);
+	return eigenToVector(this->forward(vectorToEigen(input)));
+}
+
+// Helper function to convert Eigen to std::vector
+std::vector<double> Network::eigenToVector(const Eigen::VectorXd &eigenVector)
+{
+	std::vector<double> stdVector(eigenVector.data(), eigenVector.data() + eigenVector.size());
+	return stdVector;
+}
+
+std::vector<std::vector<double>> Network::eigenToVector(const Eigen::MatrixXd &eigenVector)
+{
+	std::vector<std::vector<double>> stdVector(eigenVector.rows(), std::vector<double>(eigenVector.cols()));
+
+	for (int i = 0; i < eigenVector.rows(); ++i)
+	{
+		for (int j = 0; j < eigenVector.cols(); ++j)
+		{
+			stdVector[i][j] = eigenVector(i, j);
+		}
+	}
+
+	return stdVector;
+}
+
+// Helper function to convert std::vector to Eigen
+Eigen::VectorXd Network::vectorToEigen(const std::vector<double> &stdVector)
+{
+	Eigen::VectorXd eigenVector = Eigen::Map<const Eigen::VectorXd>(stdVector.data(), stdVector.size());
+	return eigenVector;
+}
+
+Eigen::MatrixXd Network::vectorToEigen(const std::vector<std::vector<double>> &stdVector)
+{
+	Eigen::MatrixXd eigenVector(stdVector.size(), stdVector[0].size());
+
+	for (int i = 0; i < stdVector.size(); ++i)
+	{
+		for (int j = 0; j < stdVector[0].size(); ++j)
+		{
+			eigenVector(i, j) = stdVector[i][j];
+		}
+	}
+
+	return eigenVector;
 }

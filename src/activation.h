@@ -2,19 +2,20 @@
 #define ACTIVATION_H
 
 #include <cmath>
+#include <Eigen/Dense>
 
 struct Activation
 {
-	double (*function)(double);
-	double (*derivative)(double);
+	Eigen::VectorXd (*function)(const Eigen::VectorXd&);
+	Eigen::VectorXd (*derivative)(const Eigen::VectorXd&);
 };
 
 class ActivationFunctions
 {
 public:
 	static Activation sigmoid;
-	static Activation relu;
-	static Activation leaky_relu;
+	// static Activation relu;
+	// static Activation leaky_relu;
 	static Activation tanh;
 };
 
