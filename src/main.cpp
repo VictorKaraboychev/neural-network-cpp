@@ -10,18 +10,23 @@
 #define TRAINING_SIZE 60000
 #define TESTING_SIZE 10000
 
+#define LEARNING_RATE 1
+#define EPOCHS 50
+
+uint32_t shape[] = {784, 16, 10};
+
 int main()
 {
-	printf("Start\n");
-
 	// Create network
-	Network network(784);
-	network.addLayer(16, ActivationFunctions::sigmoid);
-	network.addLayer(16, ActivationFunctions::sigmoid);
-	network.addLayer(10, ActivationFunctions::sigmoid);
+	Network network(shape[0]);
 
-	printf("Network size: %d\n", network.size());
+	// Add layers
+	for (size_t i = 1; i < sizeof(shape) / sizeof(shape[0]); i++)
+	{
+		network.addLayer(shape[i], ActivationFunctions::sigmoid);
+	}
 
+	// Initialize network
 	network.initialize();
 
 	// Import training data
@@ -46,21 +51,8 @@ int main()
 		target_data.push_back(target);
 	}
 
-	// for (size_t i = 0; i < 10; i++)
-	// {
-	// 	print_image(input_data[i], 28, 28);
-	// 	printf("Target: [");
-	// 	for (size_t j = 0; j < target_data[i].size(); j++) {
-	// 		printf("%.0f ", target_data[i][j]);
-	// 	}
-	// 	printf("]\n\n");
-	// }
-
-	// size of data
-	printf("Input data size: %d\n\n", input_data.size());
-
 	// Train network
-	network.train(input_data, target_data, 1, 100);
+	network.train(input_data, target_data, LEARNING_RATE, EPOCHS);
 
 	// Import testing data
 	uint8_t **test_images = read_mnist_images("../data/test/test-images.idx3-ubyte", TESTING_SIZE, 784);
@@ -68,7 +60,7 @@ int main()
 
 	printf("Testing...\n\n");
 
-	int correct = 0;
+	int incorrect = 0;
 
 	// Print predictions
 	for (size_t i = 0; i < TESTING_SIZE; i++)
@@ -91,49 +83,38 @@ int main()
 			}
 		}
 
-		if (max_index == test_labels[i])
+		if (max_index != test_labels[i])
 		{
-			correct++;
+			incorrect++;
 		}
 	}
 
-	printf("Testing complete with %d correct predictions out of %d instances (%.2f%%)\n ", correct, TESTING_SIZE, (double)correct / TESTING_SIZE * 100);
+	printf("Testing complete with %d incorrect predictions out of %d instances (%.2f%%)\n", incorrect, TESTING_SIZE, (double)incorrect / TESTING_SIZE * 100);
 
-	// Export weights and biases to file
-	export_network(network, "network.json");
+	// Export weights and biases to file in ../models/network-X-X-X-X.json
+	std::string filename = "network-" + std::to_string(shape[0]);
+	for (size_t i = 1; i < sizeof(shape) / sizeof(shape[0]); i++)
+	{
+		filename += "-" + std::to_string(shape[i]);
+	}
+	filename += ".json";
+	export_network(network, filename);
+
+	// Free memory
+	for (size_t i = 0; i < TRAINING_SIZE; i++)
+	{
+		delete[] train_images[i];
+	}
+	delete[] train_images;
+
+	for (size_t i = 0; i < TESTING_SIZE; i++)
+	{
+		delete[] test_images[i];
+	}
+	delete[] test_images;
+
+	delete[] train_labels;
+	delete[] test_labels;
 
 	return 0;
 }
-
-// int main()
-// {
-// 	Network network(3);
-// 	network.addLayer(10, ActivationFunctions::sigmoid);
-// 	network.addLayer(1, ActivationFunctions::sigmoid);
-
-// 	network.initialize();
-
-// 	// std::vector<std::vector<std::vector<double>>> weights = {{{0.1, 0.2, 0.3}, {0.4, 0.5, 0.6}}, {{0.7, 0.8}}};
-// 	// std::vector<std::vector<double>> bias = {{0.1, 0.2}, {0.3}};
-
-// 	// network.importWeightsBiases(bias, weights);
-
-// 	std::vector<std::vector<double>> input_data = {{0.1, 0.2, 0.3}, {0.4, 0.5, 0.6}, {0.7, 0.8, 0.9}};
-// 	std::vector<std::vector<double>> target_data = {{1}, {0.2}, {0.3}};
-
-// 	network.train(input_data, target_data, 1, 10000);
-
-// 	// test prediction
-
-// 	for (size_t i = 0; i < input_data.size(); i++)
-// 	{
-// 		std::vector<double> prediction = network.predict(input_data[i]);
-
-// 		printf("Prediction: %f, Actual: %f\n", prediction[0], target_data[i][0]);
-// 	}
-
-// 	// export weights and biases
-// 	export_network(network, "test.json");
-
-// 	return 0;
-// }

@@ -12,10 +12,10 @@ public:
 	~Neuron();
 
 	// Initialize neuron weights and bias with random values or custom initialization.
-	void initialize();
+	Neuron* initialize();
 
 	// Initialize neuron weights and bias with custom values.
-	void initialize(double bias, const std::vector<double> &weights);
+	Neuron* initialize(double bias, const std::vector<double> &weights);
 
 	// Get the neuron's weighted sum value.
 	double getValue() const;
@@ -30,7 +30,7 @@ public:
 	void setBias(double bias);
 
 	// Gets the neurons weight for the index.
-	std::vector<double> getWeights() const;
+	const std::vector<double> getWeights() const;
 
 	// Set the neuron's weights.
 	void setWeights(const std::vector<double> &weights);

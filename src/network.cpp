@@ -15,22 +15,26 @@ Network::~Network()
 	// Destructor, if necessary
 }
 
-void Network::addLayer(int num_neurons, Activation activation)
+Network* Network::addLayer(int num_neurons, Activation activation)
 {
 	unsigned int num_inputs = layers.size() == 0 ? this->input_size : layers.back().size();
 	Layer layer(num_neurons, num_inputs, activation);
 	this->layers.push_back(layer);
+
+	return this;
 }
 
-void Network::initialize()
+Network* Network::initialize()
 {
 	for (Layer &layer : this->layers)
 	{
 		layer.initialize();
 	}
+
+	return this;
 }
 
-void Network::initialize(const std::vector<std::vector<double>> &bias, const std::vector<std::vector<std::vector<double>>> &weights)
+Network* Network::initialize(const std::vector<std::vector<double>> &bias, const std::vector<std::vector<std::vector<double>>> &weights)
 {
 	if (bias.size() != this->layers.size() || weights.size() != this->layers.size())
 	{
@@ -41,6 +45,8 @@ void Network::initialize(const std::vector<std::vector<double>> &bias, const std
 	{
 		this->layers[i].initialize(bias[i], weights[i]);
 	}
+
+	return this;
 }
 
 std::pair<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>> Network::exportWeightsBiases() const
@@ -48,11 +54,14 @@ std::pair<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<
 	std::vector<std::vector<double>> bias;
 	std::vector<std::vector<std::vector<double>>> weights;
 
+	bias.reserve(layers.size());
+	weights.reserve(layers.size());
+
 	for (const Layer &layer : this->layers)
 	{
 		std::pair<std::vector<double>, std::vector<std::vector<double>>> layer_weights_biases = layer.getWeightsBiases();
-		bias.push_back(layer_weights_biases.first);
-		weights.push_back(layer_weights_biases.second);
+		bias.emplace_back(layer_weights_biases.first);
+		weights.emplace_back(layer_weights_biases.second);
 	}
 
 	return std::make_pair(bias, weights);
@@ -100,13 +109,10 @@ std::vector<double> Network::forward(const std::vector<double> &inputs)
 
 void Network::backward(const std::vector<double> &input, double learning_rate)
 {
-	for (int l = this->layers.size() - 1; l >= 0; --l)
+	std::vector<double> current_inputs = input;
+	for (Layer &layer : this->layers)
 	{
-		// Get previous outputs and deltas
-		const std::vector<double> &layer_inputs = (l == 0) ? input : this->layers[l - 1].getValues();
-
-		// Update weights and biases
-		this->layers[l].backward(layer_inputs, learning_rate);
+		current_inputs = layer.backward(current_inputs, learning_rate);
 	}
 }
 
@@ -140,6 +146,7 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
 	{
 		double epoch_loss = 0.0; // Initialize epoch loss to 0
 
+		// Train the network on each instance
 		for (size_t i = 0; i < input_data.size(); ++i)
 		{
 			const std::vector<double> &input = input_data[i];
@@ -162,7 +169,7 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
 		epoch_loss /= input_data.size();
 
 		// Print epoch loss every 1% of epochs
-		if (epoch % (epochs / 100) == 0 || epoch == epochs - 1)
+		if (epoch % (std::max(epochs, 100) / 100) == 0 || epoch == epochs - 1)
 		{
 			// Calculate time elapsed and predicted time to completion
 			std::chrono::steady_clock::time_point current_time = std::chrono::steady_clock::now();
@@ -212,10 +219,10 @@ void Network::train(const std::vector<std::vector<double>> &input_data, const st
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
 	// Print training time
-	printf("Training time: %ld ms\n\n", std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count());
+	printf("Training time: %.3fs\n\n", std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() / 1000.0);
 }
 
-std::vector<double> Network::predict(const std::vector<double> &input)
+std::vector<double> Network::predict(std::vector<double> &input)
 {
 	return this->forward(input);
 }

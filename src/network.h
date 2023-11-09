@@ -13,13 +13,13 @@ public:
 	~Network();
 
 	// Add a layer to the network.
-	void addLayer(int num_neurons, Activation activation);
+	Network* addLayer(int num_neurons, Activation activation);
 
 	// Initialize the network and its layers.
-	void initialize();
+	Network* initialize();
 
 	// Initialize the network and its layers with custom weights and biases.
-	void initialize(const std::vector<std::vector<double>> &bias, const std::vector<std::vector<std::vector<double>>> &weights);
+	Network* initialize(const std::vector<std::vector<double>> &bias, const std::vector<std::vector<std::vector<double>>> &weights);
 
 	// Export the network's weights and biases.
 	std::pair<std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>> exportWeightsBiases() const;
@@ -34,7 +34,7 @@ public:
 	void train(const std::vector<std::vector<double>> &input_data, const std::vector<std::vector<double>> &target_data, double learning_rate, int epochs);
 
 	// Make predictions using the trained network.
-	std::vector<double> predict(const std::vector<double> &input);
+	std::vector<double> predict(std::vector<double> &input);
 
 private:
 	unsigned int input_size;    // Number of inputs to the network.

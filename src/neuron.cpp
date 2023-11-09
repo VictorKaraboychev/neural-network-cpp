@@ -12,13 +12,15 @@ Neuron::~Neuron()
 	// Destructor, if necessary
 }
 
-void Neuron::initialize()
+Neuron* Neuron::initialize()
 {
 	this->value = 0.0;
 	this->randomInitialization();
+
+	return this;
 }
 
-void Neuron::initialize(double bias, const std::vector<double> &weights)
+Neuron* Neuron::initialize(double bias, const std::vector<double> &weights)
 {
 	if (weights.size() != this->num_inputs)
 	{
@@ -27,7 +29,9 @@ void Neuron::initialize(double bias, const std::vector<double> &weights)
 
 	this->value = 0.0;
 	this->bias = bias;
-	this->weights = weights;
+	this->weights = std::move(weights);
+
+	return this;
 }
 
 double Neuron::getValue() const
@@ -50,7 +54,7 @@ void Neuron::setBias(double bias)
 	this->bias = bias;
 }
 
-std::vector<double> Neuron::getWeights() const
+const std::vector<double> Neuron::getWeights() const
 {
 	return this->weights;
 }
@@ -91,16 +95,13 @@ void Neuron::updateWeightsBias(double learning_rate, double delta, const std::ve
 		throw std::runtime_error("Input size does not match weight size.");
 	}
 
-	// Calculate the gradient
-	double gradient = learning_rate * delta;
-
 	// Update the bias
-	this->bias -= gradient;
+	this->bias -= learning_rate * delta;
 
 	// Update weights
 	for (int i = 0; i < num_inputs; i++)
 	{
-		this->weights[i] -= gradient * inputs[i];
+		this->weights[i] -= learning_rate * delta * inputs[i];
 	}
 }
 
@@ -109,8 +110,9 @@ void Neuron::randomInitialization()
 	// Initialize weights and bias with random values
 	this->bias = 2 * ((double)rand() / RAND_MAX) - 1;
 
+	this->weights.reserve(this->num_inputs);
 	for (int i = 0; i < num_inputs; i++)
 	{
-		this->weights.push_back(2 * ((double)rand() / RAND_MAX) - 1);
+		this->weights.emplace_back(2 * ((double)rand() / RAND_MAX) - 1);
 	}
 }

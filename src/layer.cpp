@@ -4,10 +4,11 @@
 
 Layer::Layer(unsigned int num_neurons, unsigned int num_inputs, Activation activation) : num_inputs(num_inputs), num_neurons(num_neurons), activation(activation)
 {
+	neurons.reserve(num_neurons);
 	for (int i = 0; i < this->num_neurons; i++)
 	{
 		Neuron neuron(this->num_inputs);
-		this->neurons.push_back(neuron);
+		this->neurons.emplace_back(neuron);
 	}
 }
 
@@ -16,15 +17,16 @@ Layer::~Layer()
 	// Destructor, if necessary
 }
 
-void Layer::initialize()
+Layer* Layer::initialize()
 {
 	for (Neuron &neuron : this->neurons)
 	{
 		neuron.initialize();
 	}
+	return this;
 }
 
-void Layer::initialize(const std::vector<double> bias, const std::vector<std::vector<double>> &weights)
+Layer* Layer::initialize(const std::vector<double>& bias, const std::vector<std::vector<double>>& weights)
 {
 	if (bias.size() != this->num_neurons || weights.size() != this->num_neurons)
 	{
@@ -35,6 +37,7 @@ void Layer::initialize(const std::vector<double> bias, const std::vector<std::ve
 	{
 		this->neurons[i].initialize(bias[i], weights[i]);
 	}
+	return this;
 }
 
 std::pair<std::vector<double>, std::vector<std::vector<double>>> Layer::getWeightsBiases() const
@@ -42,16 +45,19 @@ std::pair<std::vector<double>, std::vector<std::vector<double>>> Layer::getWeigh
 	std::vector<double> bias;
 	std::vector<std::vector<double>> weights;
 
+	bias.reserve(neurons.size());
+    weights.reserve(neurons.size());
+
 	for (const Neuron &neuron : this->neurons)
 	{
-		bias.push_back(neuron.getBias());
-		weights.push_back(neuron.getWeights());
+		bias.emplace_back(neuron.getBias());
+		weights.emplace_back(neuron.getWeights());
 	}
 
 	return std::make_pair(bias, weights);
 }
 
-void Layer::setWeightsBiases(const std::vector<double> bias, const std::vector<std::vector<double>> &weights)
+void Layer::setWeightsBiases(const std::vector<double>& bias, const std::vector<std::vector<double>>& weights)
 {
 	if (bias.size() != this->num_neurons || weights.size() != this->num_neurons)
 	{
@@ -73,9 +79,10 @@ unsigned int Layer::size() const
 std::vector<double> Layer::getValues() const
 {
 	std::vector<double> values;
+	values.reserve(this->num_neurons);
 	for (Neuron neuron : this->neurons)
 	{
-		values.push_back(neuron.getValue());
+		values.emplace_back(neuron.getValue());
 	}
 	return values;
 }
@@ -146,14 +153,15 @@ void Layer::computeDeltas(Layer &next_layer) // deltas for layer l + 1
 std::vector<double> Layer::forward(const std::vector<double> &inputs)
 {
 	std::vector<double> outputs;
+	outputs.reserve(this->num_neurons);
 	for (Neuron &neuron : this->neurons)
 	{
-		outputs.push_back(neuron.activate(inputs, this->activation));
+		outputs.emplace_back(neuron.activate(inputs, this->activation));
 	}
 	return outputs;
 }
 
-void Layer::backward(const std::vector<double> &inputs, double learning_rate)
+std::vector<double> Layer::backward(const std::vector<double> &inputs, double learning_rate)
 {
 	if (inputs.size() != this->num_inputs)
 	{
@@ -164,4 +172,5 @@ void Layer::backward(const std::vector<double> &inputs, double learning_rate)
 	{
 		this->neurons[i].updateWeightsBias(learning_rate, this->deltas[i], inputs);
 	}
+	return this->getValues();
 }
